@@ -1,0 +1,21 @@
+```{r}
+x <- 2
+y <- 3 
+x + y 
+```
+linux commands 
+
+pwd 
+(print working directory)
+
+ls 
+print files in current working directory 
+
+cd 
+
+
+
+
+
+
+
