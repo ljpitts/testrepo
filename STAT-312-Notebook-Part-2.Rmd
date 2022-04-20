@@ -1,0 +1,399 @@
+---
+title: ''
+author: "Carson James"
+date: "3/28/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Plotting
+```{r}
+# DNase data
+
+# plot concentration as function of density:
+plot(x = DNase$density, y = DNase$conc)
+```
+
+```{r}
+# add axis labels
+plot(x = DNase$conc, y = DNase$density,
+xlab='DNase concentration (ng/ml)', ylab='Optical density')
+```
+
+
+```{r}
+# change point symbol
+plot(DNase$conc, DNase$density, pch=4,
+xlab='DNase concentration (ng/ml)', ylab='Optical density')
+
+```
+
+
+# **03/07**
+
+## Box Plots: 
+An 'a'-th percentile of an **ordered** dataset is just the point in the dataset that has 'a'% of the data less than or equal to the point
+
+Ex: data: 5.5, 5.56, 5.57, 5.78, 5.9, 6, 6.1, 6.15, 6.2, 6.3 
+This data is ordered, 
+- the 10th percentile is 5.5 since 10% of the data is less than or equal to 5.5
+- the 50th percentile is 5.9 since 50% of the data is less than or equal to 5.9.
+- 6.2 is the 90th percentile
+
+The first, second and third quartiles of a data set are just the 25th, 50th and 75th percentiles of the data. So 25% of the data is less than or equal to the first quartile, ... etc
+
+A box plot consists of two whiskers and a box. The edges of the box are the first and third quartiles, the whiskers extending from the edges of the box mark the min and max, and inside the box, the 2 quartile is marked.
+
+## Fomulas:
+In R you can denote a dependence between variables 
+by using the '~' operator. 
+If you have a variables, x and y and you are interested in y as a function of x, when plotting you can use the formula 'y ~ x'.
+```{r}
+#DNase
+
+# make box plots for density for each run using a formula
+# when the function takes formulas, you only need to give variable names, 
+#i.e. var1 ~ var2 instead of data$var1, data$var2
+# however, you need to supply the data to the function
+boxplot(density ~ Run, data=DNase)
+
+# to do boxplot with a single data set x do boxplot(x)
+# outliers are denoted by circles
+
+# generating data from non symmetric distribution
+x <- rgamma(100, shape = .5) 
+boxplot(x)
+
+
+```
+
+## histograms:
+
+to make a histogram use the `hist` function
+```{r}
+hist(DNase$density)
+```
+
+
+# **03/09**
+
+## ggplot2 package
+ggplot2 lets us make pretty plots using layers.
+
+```{r}
+# install.packages("ggplot2")
+library(ggplot2)
+#plot DNase density ~ conc (denisty as function of conc) 
+
+# recall plot from base plot function:
+plot(x = DNase$conc, y = DNase$density)
+
+# now with ggplot2
+ggplot(data=DNase, mapping=aes(x=conc, y=density)) +
+geom_point()
+       
+
+
+```
+
+
+
+```{r}
+# now boxplot
+
+# base boxplot 
+boxplot(density ~ Run, data=DNase)
+
+# ggplot with boxplot layer
+ggplot(DNase, aes(x=Run, y=density)) + geom_boxplot()
+```
+
+
+## faceting
+faceting is breaking up data according to a particular variable.
+```{r}
+# base layer
+ggplot(DNase, aes(x=conc, y=density)) +
+# point layer
+geom_point() + 
+# facet layer
+    facet_wrap(Run ~ ., ncol=4)
+
+```
+
+## chickwits data:
+
+```{r}
+head(chickwts)
+#?chickwts
+# feed is factor, weigth is numeric
+
+# get levels
+levels(chickwts$feed)
+
+# make bar plot for feed levels
+ggplot(chickwts, aes(x=feed)) + geom_bar()
+```
+
+
+## Fill by factor: 
+```{r}
+# fill argument to aes function:
+# this assigns a color to each factor. 
+
+# boxplot
+ggplot(chickwts, aes(x=feed, y=weight, fill=feed)) +
+geom_boxplot()
+
+# dotplot 
+ggplot(chickwts, aes(x=feed, y=weight, fill=feed)) +
+geom_dotplot(binaxis='y', stackdir="center", dotsize=0.8)
+
+
+```
+
+
+## scatter with smoothing
+```{r}
+ggplot(DNase, aes(x=conc, y=density)) + geom_point()
+
+ggplot(DNase, aes(x=conc, y=density)) + geom_point() + geom_smooth()
+```
+
+## Factor Review
+
+```{r}
+x <- c("a", "b")
+is.factor(x)
+x <- as.factor(x)
+is.factor(x)
+x
+```
+
+# **03/21**
+
+
+## EM algorithm 
+```{r}
+#install.packages("mixtools")
+library(mixtools) 
+
+# generate data for simulation:
+
+# initialize data vector of length 20000
+n <- 20000
+data <- rep(0, n)
+
+# for each data sample, with prob .3, .1, .6 sample from a normal(-6, 2), normal(0,1) and normal(6,2) (second param is scale/sd)
+set.seed(10)
+for (i in (1:n)) {
+    group <- sample(x = c(1, 2, 3), size = 1, prob = c(.3, .1, .6))
+    if (group == 1) {
+        data[i] <- rnorm(n = 1, mean = -6, sd = 2)
+    } else if (group == 2) {
+        data[i] <- rnorm(n = 1, mean = 0, sd = 1)
+    } else {
+        data[i] <- rnorm(n = 1, mean = 6, sd = 2)
+    }
+}
+
+#vizualize data
+hist(data, breaks = 50)
+
+# em algorithm 
+# k is the number of normal distributions in the mixture
+em.mix = normalmixEM(x = data, k = 3)
+
+#lambda is the mixing proportions
+em.mix$lambda 
+
+#means
+em.mix$mu
+
+# sigma is sd
+em.mix$sigma
+```
+
+
+## Clustering
+
+```{r}
+# euclidean distance: distance between numeric vectors
+
+# distance between points c(1, 2, -1) and c(0, 1, 3)
+x <- c(1, 2, -1)
+y <- c(0, 1, 3)
+
+dist <- x-y
+dist <- dist^2
+dist <- sum(dist)
+dist <- sqrt(dist)
+
+# hamming distance: distance between binary vectors (entries are 0,1's)
+
+# distance between c(1, 0, 0) and c(0, 1, 0)
+x <- c(1, 0, 0)
+y <- c(0, 1, 0)
+dist <- sum(x != y)
+
+```
+
+# Kmeans:
+```{r}
+# kmeans:
+
+#make data:
+data <- matrix(c(5,6,1,  6,7,1,  6,5,1,   .5,0,2,  1,0,2, 0,.5,2), nrow = 6, ncol = 3, byrow = TRUE)
+
+# make into data frame
+data <- data.frame(data)
+# change column names
+names(data) <- c("length", "weight", "group")
+# make group a factor type
+data$group <- as.factor(data$group)
+
+#plot 
+library(ggplot2)
+ggplot(data, aes(x = length, y = weight, color = group)) + geom_point()
+
+
+
+# kmeans clustering:
+set.seed(10)
+data.cl <- kmeans(x = data, centers = 2)
+
+# get labels
+data.cl$cluster
+
+
+# as numeric for arithmetic
+labels.true <- as.numeric(data$group)
+labels.est <- data.cl$cluster
+
+# as factor for plotting
+labels.true.fac <- as.factor(labels.true)
+labels.est.fac <- as.factor(data.cl$cluster)
+
+# plot
+
+# true groups
+ggplot(data, aes(x = length, y = weight, color = labels.true.fac)) + geom_point() 
+
+# estimated groups
+ggplot(data, aes(x = length, y = weight, color = labels.est.fac)) + geom_point()
+
+
+
+#compare estimated clusters to actual clusters:
+# install.packages("fossil")
+library(fossil)
+
+# good test question: 
+
+#use rand.index function to compare labels:
+# explanation: https://davetang.org/muse/2017/09/21/the-rand-index/
+rand.index(c(1,1,1,  2,2), c(2,2,2, 3,3))
+rand.index(c(1,1,1,  2,2, 3), c(2,2,3, 3,3, 4))
+
+rand.index(labels.est, labels.true)
+# rand.index == 1 is a perfect match
+
+```
+
+# iris dataset
+```{r}
+library(datasets)
+data(iris)
+
+# see what data looks like
+head(iris)
+```
+
+
+```{r}
+
+# fit clusters:
+# remember to only include numeric data
+set.seed(10)
+iris.cl <- kmeans(x = iris[ , 1:4], centers = 3)
+
+# estimate clusters (numeric)
+cl.est <- iris.cl$cluster
+
+# get true clusters (numeric)
+cl.true <- as.numeric(iris$Species)
+
+library(fossil)
+rand.index(cl.true, cl.est)
+# decent cluster result
+
+cl.true
+cl.est
+
+# plot with same colors (must have same labels):
+
+#looks like the labels were permuted. The estimated labels should be permuted via 2 -> 1, 3 -> 2 and 1 -> 3 (this is a guess assuming the estimates are good)
+n <- length(cl.est)
+for (i in (1:n)) {
+    if (cl.est[i] == 2) {
+        cl.est[i] <- 1
+    } else if (cl.est[i] == 3) {
+        cl.est[i] <- 2
+    } else {
+        cl.est[i] <- 3
+    }
+}
+
+# get estimated clusters as factor
+cl.est.fac <- as.factor(cl.est)
+
+# get true clusters as factor
+cl.true.fac <- as.factor(cl.true)
+
+#plot x = sepal length and y = sepal width with color:
+library(ggplot2)
+ggplot(data = iris, aes(x = Sepal.Length, y = Sepal.Width, color = cl.true.fac)) + geom_point()
+
+ggplot(data = iris, aes(x = Sepal.Length, y = Sepal.Width, color = cl.est.fac)) + geom_point()
+
+```
+
+
+
+
+
+
+
+```{r}
+
+# attribute matrix:
+animals <- matrix(c(0,1,1,1,1,  0,1,1,1,1,  0,1,0,1,1,  0,0,0,1,0,  1,0,0,1,1,  0,0,0,0,0), nrow = 6, ncol = 5, byrow = TRUE)
+
+rnames <- c("human", "ape", "mouse", "snake", "hawk", "spider")
+cnames <- c("feather", "tetrapod", "bipedal", "vertebrate", "endotherm") 
+
+animals <- data.frame(animals, row.names = rnames)
+names(animals) <- cnames
+
+# get distance matrix:
+# method = manhattan  gives hamming distance in this case
+dist.animals = as.matrix(dist(animals, diag=TRUE, method="manhattan", upper=TRUE))
+dist.animals
+
+# see slides for next steps
+
+
+
+# hclust function:
+
+# distance object, method = "manhattan" is the hamming distance
+dist.animals =  dist(animals, diag=TRUE, method="manhattan")
+
+# hclust function, method = "mcquitty" is the weighted average 
+clust.animals = hclust(dist.animals, method="mcquitty")
+plot(clust.animals)
+
+```
